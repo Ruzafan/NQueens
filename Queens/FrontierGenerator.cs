@@ -12,7 +12,7 @@ public static class FrontierGenerator
         for (var i = 1; i <= n; i++)
         {
             //if i is not in occupied we add to the posible values of Y axis
-            if (!occupiedPositions.Y_Axis.IsInTheDicc(i)1)
+            if (!occupiedPositions.Y_Axis.IsInTheDicc(i))
             {
                 if (!occupiedPositions.Z.IsInTheDicc(currentX + i) && !occupiedPositions.Z.IsInTheDicc(currentX - i))
                 {
@@ -23,8 +23,6 @@ public static class FrontierGenerator
         return res;
     }
 
-
-   
 
     private static bool IsInTheDicc(this Dictionary<int, bool> dic, int val)
     {
