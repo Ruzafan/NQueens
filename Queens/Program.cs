@@ -1,76 +1,85 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 
 Console.WriteLine("How big has to be the table?");
 var size = Console.ReadLine();
 int n = int.Parse(size);
-var table = new int[n, n];
+var matrix = new Matrix(n);
 int retires = 0;
-Dictionary<int, bool> occupiedX = new Dictionary<int, bool>();
-Dictionary<int, bool> occupiedDiagonals = new Dictionary<int, bool>();
-while (main(table) < n && retires < n * 1000)
+new List<Pos>();
 {
+    Stopwatch stopwatch = Stopwatch.StartNew();
     retires++;
     //Console.WriteLine(retires);
     //PrintMatrix(table);
     //Console.ReadLine();
-    table = new int[n, n];
-    occupiedX = new Dictionary<int, bool>();
-    occupiedDiagonals = new Dictionary<int, bool>();
-}
-Console.WriteLine(retires);
-if (retires >= n * 1000)
-{
-    Console.WriteLine("Not found");
-}
-else
-{
-    PrintMatrix(table);
-}
-
-int main(int[,] matrix)
-{
-    int spotsOccupied = 0;
-    for (int y = 1; y <= n; y++)
+    matrix.Table = new int[n, n];
+    var ocuppiedPositions = new OccupiedPositions();
+    var frontier = FrontierGenerator.Generate(1, ocuppiedPositions, n);
+    while (frontier != null && frontier.Any())
     {
-        int x = GetFreeXSpot(y);
-        if (x > -1)
+        var pos = frontier[0];
+        frontier.RemoveAt(0);
+        SetValuesTo(ocuppiedPositions, matrix, pos, true);
+        var (newMatrix, newOccupiedPositons) = CheckNextPosition(pos.X + 1, matrix, ocuppiedPositions);
+        if (newMatrix != null && newOccupiedPositons != null)
         {
-            matrix[y - 1, x - 1] = 1;
-            spotsOccupied++;
+            matrix = newMatrix;
+            ocuppiedPositions = newOccupiedPositons;
+            break;
         }
         else
         {
-            break;
+            SetValuesTo(ocuppiedPositions, matrix, pos, false);
         }
     }
-    return spotsOccupied;
+    stopwatch.Stop();
+    PrintTable(matrix.Table);
+    Console.WriteLine(stopwatch.ElapsedMilliseconds);
+    Console.ReadLine();
 }
 
-int GetFreeXSpot(int y)
+
+
+(Matrix, OccupiedPositions) CheckNextPosition(int x, Matrix matrix, OccupiedPositions occupiedPositions)
 {
-    var spots = new List<int>();
-    for (int x = 1; x <= n; x++)
+    var newOccupiedPositions = (OccupiedPositions)occupiedPositions.Clone();
+    var newMatrix = (Matrix)matrix.Clone();
+    var frontier = FrontierGenerator.Generate(x, newOccupiedPositions, n);
+    while (frontier != null && frontier.Any())
     {
-        if (!occupiedX.ContainsKey(x) && !occupiedDiagonals.ContainsKey(y + x) && !occupiedDiagonals.ContainsKey(y - x))
+        var pos = frontier[0];
+        frontier.RemoveAt(0);
+        SetValuesTo(newOccupiedPositions, newMatrix, pos, true);
+        if(newMatrix.IsTheTableCompleted())
         {
-            spots.Add(x);
+            return (newMatrix, newOccupiedPositions);
+        }
+        var (newnewMatrix, newnewOccupiedPositons) = CheckNextPosition(pos.X + 1, newMatrix, newOccupiedPositions);
+        if (newnewMatrix != null && newnewOccupiedPositons != null)
+        {
+            return (newnewMatrix, newnewOccupiedPositons);
+        }
+        else
+        {
+            SetValuesTo(newOccupiedPositions, newMatrix, pos, false);
         }
     }
-    if (spots.Any())
-    {
-        Random random = new Random();
-        int pos = random.Next(0,spots.Count-1);
-        var spot = spots[pos];
-        occupiedX[spot] = true;
-        occupiedDiagonals[y + spot] = true;
-        occupiedDiagonals[y - spot] = true;
-        return spot;
-    }
-    return -1;
+    return (null, null);
 }
 
-void PrintMatrix(int[,] matrix)
+void SetValuesTo(OccupiedPositions? occupiedPositions, Matrix? matrix, Pos? pos, bool value)
+{
+    occupiedPositions.X_Axis[pos.X] = value;
+    occupiedPositions.Y_Axis[pos.Y] = value;
+    matrix.Table[pos.Y - 1, pos.X-1] = value ? 1 : 0;
+    occupiedPositions.Z[pos.X + pos.Y] = value;
+    occupiedPositions.Z[pos.X - pos.Y] = value;
+}
+
+void PrintTable(int[,] matrix)
 {
     for (int y = 0; y < n; y++)
     {

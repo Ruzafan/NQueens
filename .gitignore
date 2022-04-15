@@ -5,3 +5,5 @@
 /.vs/Queens
 /Queens/bin/Debug/net6.0
 /Queens/obj
+/.vs
+/Queens/bin/Release/net6.0
